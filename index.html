@@ -4,11 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <script src="data.js?v=20230701"></script>
 </head>
 <body>
     <div id="result"></div>
     <script>
-        fetch('data.csv').then(res=>console.log(res));
+        console.log('by js:\n' + energyData);
+        fetch('data.csv').then(res => {
+            console.log(res);
+            return res.text;
+        }).then(csv => {
+            console.log('by fetch:\n' + csv);
+        });
     </script>
 </body>
 </html>
