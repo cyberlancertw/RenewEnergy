@@ -4,18 +4,97 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <link rel="stylesheet" href="style.css?v=20230701" />
     <script src="data.js?v=20230701"></script>
 </head>
 <body>
-    <div id="result"></div>
-    <script>
-        console.log('by js:\n' + energyData);
-        fetch('data.csv').then(res => {
-            console.log(res);
-            return res.text;
-        }).then(csv => {
-            console.log('by fetch:\n' + csv);
-        });
-    </script>
+    <div id="divTitle">
+        <div>經濟部能源局 再生能源發電量月資料 公開資料繪製圖表</div>
+        <div id="divSelect">
+            <div>
+                <label for="startMonth">起始月份</label>
+                <select id="startMonth"></select>
+            </div>
+            <div>
+                <label for="endMonth">結束月份</label>
+                <select id="endMonth"></select>
+            </div>
+        </div>
+        <div>
+            <div>資料時間：<span id="spanRange"></span></div>
+            <div>資料來源：<a href="https://data.gov.tw/dataset/160060" target="_blank">政府資料開放平台</a></div>
+            <div>圖表製作：cyberlancer</div>
+            <div>更新時間：2023年07月01日</div>
+        </div>
+    </div>
+    <div id="divMain">
+        <div id="divControl">
+            <div>
+                <input type="checkbox" value="chkSum" id="chkSum" />
+                <label for="chkSum">發電量合計</label>
+                <input type="color" value="#434343" id="colSum" />
+            </div>
+            <div>
+                <input type="checkbox" value="chkHydra" id="chkHydra" />
+                <label for="chkHydra">慣常水力</label>
+                <input type="color" value="#4b81ec" id="colHydra" />
+            </div>
+            <div>
+                <input type="checkbox" value="chkGeo" id="chkGeo" />
+                <label for="chkGeo">地熱</label>
+                <input type="color" value="#b84a60" id="colGeo" />
+            </div>
+            <div>
+                <input type="checkbox" value="chkSolar" id="chkSolar" />
+                <label for="chkSolar">太陽光電</label>
+                <input type="color" value="#e9bb52" id="colSolar" />
+            </div>
+            <div>
+                <input type="checkbox" value="chkWind" id="chkWind" />
+                <label for="chkWind">風力</label>
+                <input type="color" value="#c3c3c3" id="colWind" />
+            </div>
+
+            <div>
+                <input type="checkbox" value="chkWindLand" id="chkWindLand" />
+                <label for="chkWindLand">風力 陸域</label>
+                <input type="color" value="#d58234" id="colWindLand" />
+            </div>
+            <div>
+                <input type="checkbox" value="chkWindOffShore" id="chkWindOffShore" />
+                <label for="chkWindOffShore">風力 離岸</label>
+                <input type="color" value="#7bd5ff" id="colWindOffShore" />
+            </div>
+            <div>
+                <input type="checkbox" value="chkBio" id="chkBio" />
+                <label for="chkBio">生質能</label>
+                <input type="color" value="#b98cc3" id="colBio" />
+            </div>
+            <div>
+                <input type="checkbox" value="chkBioSolid" id="chkBioSolid" />
+                <label for="chkBioSolid">生質能 固態</label>
+                <input type="color" value="#503ca0" id="colWind" />
+            </div>
+            <div>
+                <input type="checkbox" value="chkBioGas" id="chkBioGas" />
+                <label for="chkBioGas">生質能 氣態</label>
+                <input type="color" value="#fff498" id="colBioGas" />
+            </div>
+            <div>
+                <input type="checkbox" value="chkWaste" id="chkWaste" />
+                <label for="chkWaste">廢棄物</label>
+                <input type="color" value="#c7e5b3" id="colWaste" />
+            </div>
+            <div>
+                <input type="checkbox" value="chkEvent" id="chkEvent" />
+                <label for="chkEvent">事件</label>
+            </div>
+        </div>
+        <div id="divGraph">
+            <svg id="svgLine"></svg>
+            <svg id="svgPie"></svg>
+        </div>
+    </div>
+    <script src="main.js?v=20230701"></script>
 </body>
 </html>
