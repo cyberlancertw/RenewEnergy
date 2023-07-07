@@ -202,7 +202,8 @@ function DrawAxisGrid(printData){
     axisX.setAttribute('y1', svgLineHeight - padTop);
     axisX.setAttribute('x2', svgLineWidth - padLeft);
     axisX.setAttribute('y2', svgLineHeight - padTop);
-    axisX.setAttribute('id', 'axisX');
+    axisX.setAttribute('stroke', 'black');
+    axisX.setAttribute('stroke-width', '0.5');
     svgLine.appendChild(axisX);
 
     let axisY = document.createElementNS(xmls, 'line');     // y 縱軸
@@ -210,7 +211,8 @@ function DrawAxisGrid(printData){
     axisY.setAttribute('y1', svgLineHeight - padTop);
     axisY.setAttribute('x2', padLeft);
     axisY.setAttribute('y2', padTop);
-    axisY.setAttribute('id', 'axisY');
+    axisY.setAttribute('stroke', 'black');
+    axisY.setAttribute('stroke-width', '0.5');
     svgLine.appendChild(axisY);
 
     let text = document.createElementNS(xmls, 'text');      // y 縱軸文字
@@ -218,6 +220,7 @@ function DrawAxisGrid(printData){
     text.setAttribute('x', padLeft);
     text.setAttribute('y', padTop / 1.5);
     text.setAttribute('color', 'black');
+    text.setAttribute('font-size', '12');
     text.setAttribute('id', 'axisTextY');
     svgLine.appendChild(text);
 

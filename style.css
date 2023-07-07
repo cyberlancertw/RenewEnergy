@@ -6,6 +6,13 @@
         background-color: #fcfaf2;
     }
     
+    input[type="color"]{
+        border: none;
+        opacity: 0;
+        width: 1.2rem;
+        height: 1.2rem;
+    }
+
     #divTitle{
         display:flex;
         flex-direction: column;
@@ -58,7 +65,7 @@
     }
     
     #divControl > div > label{
-        width: 100px;
+        width: 75px;
     }
     
     #divControl > div > label:hover{
@@ -74,7 +81,113 @@
         display: flex;
         align-items: center;
     }
+
+    #svgLine{
+        background-color:#ffffff;
+        width: 100%;
+        height: 500px;
+    }
 }
+
+@media (min-width: 575px) and (max-width: 1200px) {
+    *{
+        box-sizing: border-box;
+    }
+    body{
+        background-color: #fcfaf2;
+    }
+    
+    input[type="color"]{
+        opacity: 0;
+        border: none;
+        opacity: 0;
+        width: 1.2rem;
+        height: 1.2rem;
+    }
+
+    #divTitle{
+        display:flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        width: 100%;
+    }
+    
+    #divTitle > div:nth-child(1){
+        width: 100%;
+        font-size: 1.8rem;
+        font-weight: 900;
+    }
+    
+    #divSelect{
+        width: 70%;
+        display: flex;
+        justify-content: space-evenly;
+        margin-top: 1rem;
+    }
+    #divSelect select{
+        padding: 0.5rem;
+    }
+
+    #divTitle > div:nth-child(3){
+        width: 30%;
+    }
+
+    #divTitle > div:nth-child(3) > div{
+        font-size: 0.9rem;
+    }
+    
+    #divTitle > div:nth-child(3) > div > a {
+        text-decoration: none;
+        color: blueviolet;
+    }
+    
+    #divTitle > div:nth-child(3) > div > a:hover{
+        color:darkred;
+    }
+    
+    #divMain{
+        margin-top: 1rem;
+        width: 100%;
+    }
+    
+    #divControl{
+        display: flex;
+        flex-wrap: wrap;
+        width: 100%;
+    }
+    
+    
+    #divControl > div{
+        font-size: 0.8rem;
+        margin:0 2px;
+        width: 23%;
+    }
+    
+    #divControl > div > label{
+        width: 80px;
+    }
+    
+    #divControl > div > label:hover{
+        font-weight: 900;
+    }
+    
+    #divControl input[type="checkbox"]{
+        width: 1rem;
+        height: 1rem;
+    }
+    
+    #divControl > div{
+        display: flex;
+        align-items: center;
+    }
+
+    #svgLine{
+        background-color:#ffffff;
+        width: 100%;
+        height: 500px;
+    }
+}
+
 
 @media (min-width: 1200px){
     *{
@@ -173,13 +286,5 @@
     #svgPie{
         background-color:lightblue;
     }
-
-    #axisTextY{
-        font-size: 12px;
-    }
 }
 
-#axisX, #axisY {
-    stroke: black;
-    stroke-width: 0.5;
-}
