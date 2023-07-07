@@ -4,7 +4,7 @@ var svgPie = document.getElementById('svgPie');
 var startMonth = document.getElementById('startMonth'), endMonth = document.getElementById('endMonth');
 var xmls = 'http://www.w3.org/2000/svg';
 var svgLineWidth, svgLineHeight;
-var padLeft = 30, padTop = 30;                  // 距離左側右側 30px，距離上緣下緣 30px
+var padLeft = 60, padTop = 30;                  // 距離左側右側 60px，距離上緣下緣 30px
 var dataMax, dataMin;
 window.addEventListener('load', Init)
 
@@ -17,6 +17,7 @@ function Init(){
         console.error('缺少資料，已結束');
         return;
     }
+    UIInit();
     DataInit();
     RangeInit();
     StartEndInit();
@@ -25,6 +26,15 @@ function Init(){
     DrawGraph();
 }
 
+/**
+ * UI 動態調整
+ */
+function UIInit(){
+    let colors = document.getElementById('divControl').querySelectorAll('input[type="color"]');
+    for(let i = 0, n = colors.length; i < n; i++){
+        colors[i].parentNode.style.backgroundColor = colors[i].value;
+    }
+}
 /**
  * 將 csv 資料轉成物件
  * @returns 
@@ -43,17 +53,17 @@ function DataInit(){
         obj['year'] = parseInt(datas[0].substr(0, 4));  // 日期_年
         obj['month'] = parseInt(datas[0].substr(4, 2)); // 日期_月
         obj['date'] = obj.month == 12 ? (new Date(obj.year + 1, 0, 0)) : (new Date(obj.year, obj.month, 0));
-        obj['sum'] = parseFloat(datas[2]);              // 再生能源發電量合計
-        obj['hydra'] = parseFloat(datas[3]);            // 慣常水力
-        obj['geo'] = parseFloat(datas[4]);              // 地熱
-        obj['solar'] = parseFloat(datas[5]);            // 太陽光電
-        obj['wind'] = parseFloat(datas[6]);             // 風力_小計
-        obj['wind_land'] = parseFloat(datas[7]);        // 風力_陸域
-        obj['wind_offshore'] = parseFloat(datas[8]);    // 風力_離岸
-        obj['bio'] = parseFloat(datas[9]);              // 生質能_小計
-        obj['bio_solid'] = parseFloat(datas[10]);       // 生質能_固態
-        obj['bio_gas'] = parseFloat(datas[11]);         // 生質能_氣態
-        obj['waste'] = parseFloat(datas[12]);           // 廢棄物
+        obj['Sum'] = parseFloat(datas[2]);              // 再生能源發電量合計
+        obj['Hydra'] = parseFloat(datas[3]);            // 慣常水力
+        obj['Geo'] = parseFloat(datas[4]);              // 地熱
+        obj['Solar'] = parseFloat(datas[5]);            // 太陽光電
+        obj['Wind'] = parseFloat(datas[6]);             // 風力_小計
+        obj['WindLand'] = parseFloat(datas[7]);        // 風力_陸域
+        obj['WindOffShore'] = parseFloat(datas[8]);    // 風力_離岸
+        obj['Bio'] = parseFloat(datas[9]);              // 生質能_小計
+        obj['BioSolid'] = parseFloat(datas[10]);       // 生質能_固態
+        obj['BioGas'] = parseFloat(datas[11]);         // 生質能_氣態
+        obj['Waste'] = parseFloat(datas[12]);           // 廢棄物
         aryData.push(obj);
     }
 }
@@ -128,6 +138,9 @@ function EventInit(){
     let colors = document.getElementById('divControl').querySelectorAll('input[type="color"]');
     for(let i = 0, n = colors.length; i < n; i++){
         domList.push(colors[i]);
+        colors[i].addEventListener('change', function(){
+            colors[i].parentNode.style.backgroundColor = colors[i].value;
+        });
     }
     for(let i = 0, n = domList.length; i < n; i++){
         domList[i].addEventListener('change', DrawGraph);
@@ -156,26 +169,30 @@ function DrawGraph(){
         else{
             GetDataInRange(sDT, eDT);
         }
+        // 清空
+        while(svgLine.firstChild){
+            svgLine.removeChild(svgLine.firstChild);
+        }
         if(dataMax < dataMin) return;
-        CalculateInterval();
-        DrawLineGraph();
+        let printData = CalculateInterval();
+        DrawLineGraph(printData);
     }
 }
 
 /**
  * 繪製折線圖圖表
  */
-function DrawLineGraph(){
-    console.log(svgLine);
-    // 清空
-    while(svgLine.firstChild){
-        svgLine.removeChild(svgLine.firstChild);
-    }
-    DrawAxisGrid();
+function DrawLineGraph(printData){
 
+    printData = DrawAxisGrid(printData);
+    DrawLineMain(printData);
 }
 
-function DrawAxisGrid(){
+/**
+ * 繪製座標軸
+ * @param {array} printData 
+ */
+function DrawAxisGrid(printData){
 
     svgLineWidth = svgLine.width.baseVal.value;
     svgLineHeight = svgLine.height.baseVal.value;
@@ -198,15 +215,134 @@ function DrawAxisGrid(){
 
     let text = document.createElementNS(xmls, 'text');      // y 縱軸文字
     text.textContent = '發電量(千度)';
-    text.setAttribute('x', padLeft / 4);
+    text.setAttribute('x', padLeft);
     text.setAttribute('y', padTop / 1.5);
     text.setAttribute('color', 'black');
     text.setAttribute('id', 'axisTextY');
     svgLine.appendChild(text);
 
-    
+    let drawBottomY = svgLineHeight - padTop * (printData[1] == 0 ? 1 : 2);
+    let drawTopY = padTop;
+    let drawDiffY = (drawBottomY - drawTopY) * printData[3] / (printData[0] - printData[1]);
+    let positionY = drawBottomY;
+    let intervalWidthSmall = 6, intervalWidthBig = 10;
+    let drawValue = printData[1];
+    while(drawValue <= printData[0]){
+        let seg = document.createElementNS(xmls, 'line');
+        if(drawValue % printData[2] == 0){
+            seg.setAttribute('x1', padLeft - intervalWidthBig);
+
+            let txt = document.createElementNS(xmls, 'text');
+            txt.textContent = drawValue;
+            txt.setAttribute('x', 3);
+            txt.setAttribute('y', positionY + 2);
+            txt.setAttribute('color', 'black');
+            txt.setAttribute('font-size', '12');
+            svgLine.appendChild(txt);
+
+            let grid = document.createElementNS(xmls, 'line');
+            grid.setAttribute('x1', padLeft);
+            grid.setAttribute('y1', positionY);
+            grid.setAttribute('x2', svgLineWidth - padLeft);
+            grid.setAttribute('y2', positionY);
+            grid.setAttribute('stroke', 'lightgray');
+            grid.setAttribute('stroke-width', '0.5');
+            svgLine.appendChild(grid);
+        }
+        else{
+            seg.setAttribute('x1', padLeft - intervalWidthSmall);
+        }
+        seg.setAttribute('y1', positionY);
+        seg.setAttribute('x2', padLeft);
+        seg.setAttribute('y2', positionY);
+        seg.setAttribute('stroke', 'black');
+        seg.setAttribute('stroke-width', '0.5');
+        svgLine.appendChild(seg);
+        drawValue += printData[3];
+        positionY -= drawDiffY;
+    }
+
+    let drawDiffX = (svgLineWidth - padLeft * 2) / (aryShow.length + 1);
+    let positionX = padLeft;
+    let drawBottomX = svgLineHeight - padTop;
+    for(let i = 0, n = aryShow.length; i < n; i++){
+        positionX += drawDiffX;
+        let item = aryShow[i];
+
+        let seg = document.createElementNS(xmls, 'line');
+        seg.setAttribute('x1', positionX);
+        seg.setAttribute('y1', drawBottomX);
+        seg.setAttribute('x2', positionX);
+        if(item.month == 1){
+            seg.setAttribute('y2', svgLineHeight - padTop + intervalWidthBig);
+
+            let txt = document.createElementNS(xmls, 'text');
+            if(n > 25) txt.textContent = item.year + '年';
+            else txt.textContent = item.year + '年1月';
+            txt.setAttribute('x', positionX - 15);
+            txt.setAttribute('y', svgLineHeight - padTop + intervalWidthBig + 15);
+            txt.setAttribute('color', 'black');
+            txt.setAttribute('font-size', '12');
+            svgLine.appendChild(txt);
+
+        }
+        else{
+            seg.setAttribute('y2', svgLineHeight - padTop + intervalWidthSmall);
+            if(item.month == 6 && n <= 25){
+                let txt = document.createElementNS(xmls, 'text');
+                txt.textContent = item.year + '年6月';
+                txt.setAttribute('x', positionX - 15);
+                txt.setAttribute('y', svgLineHeight - padTop + intervalWidthBig + 15);
+                txt.setAttribute('color', 'black');
+                txt.setAttribute('font-size', '12');
+                svgLine.appendChild(txt);
+            }
+            else if(item.month != 6 && n < 11){
+                let txt = document.createElementNS(xmls, 'text');
+                txt.textContent = item.year + '年' + item.month + '月';
+                txt.setAttribute('x', positionX - 15);
+                txt.setAttribute('y', svgLineHeight - padTop + intervalWidthBig + 15);
+                txt.setAttribute('color', 'black');
+                txt.setAttribute('font-size', '12');
+                svgLine.appendChild(txt);
+            }
+        }
+        seg.setAttribute('stroke', 'black');
+        seg.setAttribute('stroke-width', '0.5');
+        svgLine.appendChild(seg);
+    }
+    return [printData[0], printData[1], drawTopY, drawBottomY, padLeft + drawDiffX, drawDiffX];
+
 }
 
+/**
+ * 主要拆線圖內容的繪製
+ * @param {array} printData 
+ */
+function DrawLineMain(printData){
+    if(aryShow.length == 0) return;
+
+    let overAll = printData[0] - printData[1];
+    if(IsCheck('Sum')) DrawPolyLine('Sum', printData, '發電量合計');
+    if(IsCheck('Hydra')) DrawPolyLine('Hydra', printData, '慣常水力');
+    if(IsCheck('Geo')) DrawPolyLine('Geo', printData, '地熱');
+    if(IsCheck('Solar')) DrawPolyLine('Solar', printData, '太陽光電');
+    if(IsCheck('Wind')) DrawPolyLine('Wind', printData, '風力');
+    if(IsCheck('WindLand')) DrawPolyLine('WindLand', printData, '風力 陸域');
+    if(IsCheck('WindOffShore')) DrawPolyLine('WindOffShore', printData, '風力 離岸');
+    if(IsCheck('Bio')) DrawPolyLine('Bio', printData, '生質能');
+    if(IsCheck('BioSolid')) DrawPolyLine('BioSolid', printData, '生質能 固態');
+    if(IsCheck('BioGas')) DrawPolyLine('BioGas', printData, '生質能 氣態');
+    if(IsCheck('Waste')) DrawPolyLine('Waste', printData, '廢棄物');
+    
+    if(IsCheck('Event')){
+        let sYM = document.getElementById('startMonth').value.split('_'), eYM = document.getElementById('endMonth').value.split('_');
+
+        for(let i = 0, n = eventData.length; i < n; i++){
+
+        }
+    }
+}
 /**
  * 繪製圓餅圖圖表
  */
@@ -231,51 +367,50 @@ function GetDataInRange(startDate, endDate){
         let data = aryData[i];
         if(data.date >= startDate && data.date <= endDate){
             aryShow.push(data);
-            if(document.getElementById('chkSum').checked){
-                if(data.sum > dataMax) dataMax = data.sum;
-                if(data.sum < dataMin) dataMin = data.sum;
+            if(IsCheck('Sum')){
+                if(data.Sum > dataMax) dataMax = data.Sum;
+                if(data.Sum < dataMin) dataMin = data.Sum;
             }
-            if(document.getElementById('chkHydra').checked){
-                if(data.hydra > dataMax) dataMax = data.hydra;
-                if(data.hydra < dataMin) dataMin = data.hydra;
+            if(IsCheck('Hydra')){
+                if(data.Hydra > dataMax) dataMax = data.Hydra;
+                if(data.Hydra < dataMin) dataMin = data.Hydra;
             }
-            if(document.getElementById('chkGeo').checked){
-                if(data.geo > dataMax) dataMax = data.geo;
-                if(data.geo < dataMin) dataMin = data.geo;
+            if(IsCheck('Geo')){
+                if(data.Geo > dataMax) dataMax = data.Geo;
+                if(data.Geo < dataMin) dataMin = data.Geo;
             }
-            if(document.getElementById('chkSolar').checked){
-                if(data.solar > dataMax) dataMax = data.solar;
-                if(data.solar < dataMin) dataMin = data.solar;
+            if(IsCheck('Solar')){
+                if(data.Solar > dataMax) dataMax = data.Solar;
+                if(data.Solar < dataMin) dataMin = data.Solar;
             }
-            if(document.getElementById('chkWind').checked){
-                if(data.wind > dataMax) dataMax = data.wind;
-                if(data.wind < dataMin) dataMin = data.wind;
+            if(IsCheck('Wind')){
+                if(data.Wind > dataMax) dataMax = data.Wind;
+                if(data.Wind < dataMin) dataMin = data.Wind;
             }
-            if(document.getElementById('chkWindLand').checked){
-                if(data.wind_land > dataMax) dataMax = data.wind_land;
-                if(data.wind_land < dataMin) dataMin = data.wind_land;
+            if(IsCheck('WindLand')){
+                if(data.WindLand > dataMax) dataMax = data.WindLand;
+                if(data.WindLand < dataMin) dataMin = data.WindLand;
             }
-            if(document.getElementById('chkWindOffShore').checked){
-                if(data.wind_offshore > dataMax) dataMax = data.wind_offshore;
-                if(data.wind_offshore < dataMin) dataMin = data.wind_offshore;
+            if(IsCheck('WindOffShore')){
+                if(data.WindOffShore > dataMax) dataMax = data.WindOffShore;
+                if(data.WindOffShore < dataMin) dataMin = data.WindOffShore;
             }
-            if(document.getElementById('chkBio').checked){
-                if(data.bio > dataMax) dataMax = data.bio;
-                if(data.bio < dataMin) dataMin = data.bio;
+            if(IsCheck('Bio')){
+                if(data.Bio > dataMax) dataMax = data.Bio;
+                if(data.Bio < dataMin) dataMin = data.Bio;
             }
-            if(document.getElementById('chkBioSolid').checked){
-                if(data.bio_solid > dataMax) dataMax = data.bio_solid;
-                if(data.bio_solid < dataMin) dataMin = data.bio_solid;
+            if(IsCheck('BioSolid')){
+                if(data.BioSolid > dataMax) dataMax = data.BioSolid;
+                if(data.BioSolid < dataMin) dataMin = data.BioSolid;
             }
-            if(document.getElementById('chkBioGas').checked){
-                if(data.bio_gas > dataMax) dataMax = data.bio_gas;
-                if(data.bio_gas < dataMin) dataMin = data.bio_gas;
+            if(IsCheck('BioGas')){
+                if(data.BioGas > dataMax) dataMax = data.BioGas;
+                if(data.BioGas < dataMin) dataMin = data.BioGas;
             }
-            if(document.getElementById('chkWaste').checked){
-                if(data.waste > dataMax) dataMax = data.waste;
-                if(data.waste < dataMin) dataMin = data.waste;
+            if(IsCheck('Waste')){
+                if(data.Waste > dataMax) dataMax = data.Waste;
+                if(data.Waste < dataMin) dataMin = data.Waste;
             }
-
         }
     }
 }
@@ -284,14 +419,58 @@ function GetDataInRange(startDate, endDate){
  * 計算 y 軸間隔
  */
 function CalculateInterval(){
-    console.log('m:' + dataMax);
-    console.log('n:' + dataMin);
-    let d = (dataMax - dataMin) / 10;     // 全距分 10 等分
-    console.log('d:' + d);
-    let p = Math.floor(Math.log10(d));    // 首數
-    console.log('p:' + p);
-    let b = Math.pow(10, p);
-    console.log('b:' + b);
-    let r = d % b;
-    console.log('r:' + r);
+    let printMax, printMin, intervalBig, intervalSmall;
+    if(dataMax == 0) return [10, 0, 10, 1];
+    if(dataMax == dataMin) return [dataMax + 5, dataMax - 5, 10, 1];
+    let nMax = Math.floor(Math.log10(dataMax));
+    intervalBig = Math.pow(10, nMax);
+    intervalSmall = Math.pow(10, nMax - 1);
+    printMax = Math.ceil(dataMax / (Math.pow(10, nMax - 1))) * intervalSmall;
+    if(dataMin == 0){
+        if(printMax / intervalBig < 2){
+            intervalBig /= 10;
+            intervalSmall /= 10;
+        }
+        return [printMax, 0, intervalBig, intervalSmall];
+    }        
+    printMin = Math.trunc(dataMin) - (Math.trunc(dataMin) % intervalSmall);
+    if(printMin < 0) printMin = 0;
+    if(printMax / intervalBig < 2){
+        intervalBig /= 10;
+        intervalSmall /= 10;
+    }
+    return [printMax, printMin, intervalBig, intervalSmall];
+}
+
+function IsCheck(keyword){
+    return document.getElementById('chk' + keyword).checked;
+}
+
+function DrawPolyLine(keyword, printData, text){
+    let points = [];
+    let overAll = printData[0] - printData[1];
+    let txtY = 0;
+    let color = document.getElementById('col' + keyword).value;
+    for(let i = 0, n = aryShow.length; i < n; i++){
+        let val = aryShow[i][keyword];
+        let x = printData[4] + printData[5] * i; 
+        let y = printData[2] + (printData[3] - printData[2]) * (printData[0] - val) / overAll;
+        txtY = y;
+        points.push(x + ',' + y);
+    }
+    let poly = document.createElementNS(xmls, 'polyline');
+    poly.setAttribute('points', points.join(' '));
+    poly.setAttribute('fill', 'none');
+    poly.setAttribute('stroke', color);
+    poly.setAttribute('stroke-width', '0.5');
+    svgLine.appendChild(poly);
+
+    let txt = document.createElementNS(xmls, 'text');
+    txt.setAttribute('x', printData[4] + printData[5] * aryShow.length);
+    txt.setAttribute('y', txtY);
+    txt.textContent = text;
+    txt.setAttribute('stroke', color);
+    txt.setAttribute('stroke-width', '0.5');
+    txt.setAttribute('font-size', '12');
+    svgLine.appendChild(txt);
 }

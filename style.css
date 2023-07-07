@@ -80,6 +80,14 @@
     *{
         box-sizing: border-box;
     }
+
+    input[type="color"]{
+        border: none;
+        opacity: 0;
+        width: 1.2rem;
+        height: 1.2rem;
+    }
+    
     body{
         background-color: #fcfaf2;
     }
