@@ -1,4 +1,4 @@
-var aryData = [], aryShow = [];
+var aryData = [], aryShow = [], aryEvent = [];
 var svgLine = document.getElementById('svgLine');
 var svgPie = document.getElementById('svgPie');
 var startMonth = document.getElementById('startMonth'), endMonth = document.getElementById('endMonth');
@@ -6,7 +6,7 @@ var xmls = 'http://www.w3.org/2000/svg';
 var svgLineWidth, svgLineHeight;
 var padLeft = 60, padTop = 30;                  // 距離左側右側 60px，距離上緣下緣 30px
 var dataMax, dataMin;
-window.addEventListener('load', Init)
+window.addEventListener('load', Init);
 
 /**
  * DOM 結構完成後的作業
@@ -58,11 +58,11 @@ function DataInit(){
         obj['Geo'] = parseFloat(datas[4]);              // 地熱
         obj['Solar'] = parseFloat(datas[5]);            // 太陽光電
         obj['Wind'] = parseFloat(datas[6]);             // 風力_小計
-        obj['WindLand'] = parseFloat(datas[7]);        // 風力_陸域
-        obj['WindOffShore'] = parseFloat(datas[8]);    // 風力_離岸
+        obj['WindLand'] = parseFloat(datas[7]);         // 風力_陸域
+        obj['WindOffShore'] = parseFloat(datas[8]);     // 風力_離岸
         obj['Bio'] = parseFloat(datas[9]);              // 生質能_小計
-        obj['BioSolid'] = parseFloat(datas[10]);       // 生質能_固態
-        obj['BioGas'] = parseFloat(datas[11]);         // 生質能_氣態
+        obj['BioSolid'] = parseFloat(datas[10]);        // 生質能_固態
+        obj['BioGas'] = parseFloat(datas[11]);          // 生質能_氣態
         obj['Waste'] = parseFloat(datas[12]);           // 廢棄物
         aryData.push(obj);
     }
@@ -159,15 +159,20 @@ function DrawGraph(){
     } else{
         // 檢查起訖年月的先後是否正確，若不是則對調
         let sYM = s.split('_'), eYM = e.split('_');
+        sYM[0] = parseInt(sYM[0]);
+        sYM[1] = parseInt(sYM[1]);
+        eYM[0] = parseInt(eYM[0]);
+        eYM[1] = parseInt(eYM[1]);
         let sDT = sYM[1] == 12 ? (new Date(sYM[0] + 1, 0, 0)) : (new Date(sYM[0], sYM[1], 0)), 
-            eDT = eYM[1] == 12 ? (new Date(eYM[0] + 1, 0, 0)) : (new Date(eYM[0], eYM[1], 0));
+            eDT = eYM[1] == 12 ? (new Date(eYM[0] + 1, 0, 0)) : (new Date(eYM[0], eYM[1], 0)),
+            sDTevent = new Date(sYM[0], sYM[1] - 1, 1);
         if(sDT > eDT){
             startMonth.selectedIndex = eIdx;
             endMonth.selectedIndex = sIdx;
-            GetDataInRange(eDT, sDT);
+            GetDataInRange(eDT, sDT, sDTevent);
         }
         else{
-            GetDataInRange(sDT, eDT);
+            GetDataInRange(sDT, eDT, sDTevent);
         }
         // 清空
         while(svgLine.firstChild){
@@ -221,7 +226,6 @@ function DrawAxisGrid(printData){
     text.setAttribute('y', padTop / 1.5);
     text.setAttribute('color', 'black');
     text.setAttribute('font-size', '12');
-    text.setAttribute('id', 'axisTextY');
     svgLine.appendChild(text);
 
     let drawBottomY = svgLineHeight - padTop * (printData[1] == 0 ? 1 : 2);
@@ -337,14 +341,7 @@ function DrawLineMain(printData){
     if(IsCheck('BioSolid')) DrawPolyLine('BioSolid', printData, '生質能 固態');
     if(IsCheck('BioGas')) DrawPolyLine('BioGas', printData, '生質能 氣態');
     if(IsCheck('Waste')) DrawPolyLine('Waste', printData, '廢棄物');
-    
-    if(IsCheck('Event')){
-        let sYM = document.getElementById('startMonth').value.split('_'), eYM = document.getElementById('endMonth').value.split('_');
-
-        for(let i = 0, n = eventData.length; i < n; i++){
-
-        }
-    }
+    if(IsCheck('Event')) DrawEventLine(printData);
 }
 /**
  * 繪製圓餅圖圖表
@@ -362,7 +359,7 @@ function DrawPieGraph(){
  * @param {Date} startDate 
  * @param {Date} endDate 
  */
-function GetDataInRange(startDate, endDate){
+function GetDataInRange(startDate, endDate, startDateEvent){
     aryShow = [];
     dataMax = 0;
     dataMin = Number.MAX_VALUE;
@@ -416,6 +413,14 @@ function GetDataInRange(startDate, endDate){
             }
         }
     }
+
+    aryEvent = [];
+    for(let i = 0, n = eventData.length; i < n; i++){
+        let data = eventData[i];
+        if(data.date >= startDateEvent && data.date <= endDate){
+            aryEvent.push(data);
+        }
+    }
 }
 
 /**
@@ -460,6 +465,46 @@ function DrawPolyLine(keyword, printData, text){
         let y = printData[2] + (printData[3] - printData[2]) * (printData[0] - val) / overAll;
         txtY = y;
         points.push(x + ',' + y);
+
+        let circ = document.createElementNS(xmls, 'circle');
+        circ.setAttribute('cx', x);
+        circ.setAttribute('cy', y);
+        circ.setAttribute('r', 3);
+        circ.setAttribute('stroke', color);
+        circ.setAttribute('fill', color);
+        circ.setAttribute('style', 'opacity:0;');
+        circ.addEventListener('mouseover', function(){
+            circ.setAttribute('style', 'opacity:1;');
+            let hint1 = document.createElementNS(xmls, 'text');
+            hint1.setAttribute('x', x - 25);
+            hint1.setAttribute('y', y - 20);
+            hint1.textContent = aryShow[i].year + '年' + aryShow[i].month + '月' + text ;
+            hint1.setAttribute('id', 'hint1_' + i);
+            hint1.setAttribute('stroke', color);
+            hint1.setAttribute('stroke-width', '0.5');
+            hint1.setAttribute('font-size', '10');
+            svgLine.appendChild(hint1);
+            let hint2 = document.createElementNS(xmls, 'text');
+            hint2.setAttribute('x', x - 25);
+            hint2.setAttribute('y', y - 10);
+            hint2.textContent = val;
+            hint2.setAttribute('id', 'hint2_' + i);
+            hint2.setAttribute('stroke', color);
+            hint2.setAttribute('stroke-width', '0.5');
+            hint2.setAttribute('font-size', '10');
+            svgLine.appendChild(hint2);
+
+        });
+        circ.addEventListener('mouseout', function(){
+            circ.setAttribute('style', 'opacity:0;');
+            if(document.getElementById('hint1_' + i) != null){
+                document.getElementById('hint1_' + i).remove();
+            }
+            if(document.getElementById('hint2_' + i) != null){
+                document.getElementById('hint2_' + i).remove();
+            }
+        });
+        svgLine.appendChild(circ);
     }
     let poly = document.createElementNS(xmls, 'polyline');
     poly.setAttribute('points', points.join(' '));
@@ -476,4 +521,44 @@ function DrawPolyLine(keyword, printData, text){
     txt.setAttribute('stroke-width', '0.5');
     txt.setAttribute('font-size', '12');
     svgLine.appendChild(txt);
+}
+
+
+function DrawEventLine(printData){
+
+    if(aryShow.length == 0 || aryEvent.length == 0) return;
+
+    let sYM = document.getElementById('startMonth').value.split('_');
+    sYM[0] = parseInt(sYM[0]);
+    sYM[1] = parseInt(sYM[1]);
+    let dateMin = new Date(sYM[0], sYM[1] - 1, 1);
+    for(let i = 0, n = aryEvent.length; i < n; i++){
+        let diffMonth = (aryEvent[i].date - dateMin) / (1000 * 60 * 60 * 24 * 30);
+        let positionX = padLeft + printData[5] * diffMonth;
+        let vline = document.createElementNS(xmls, 'line');
+        vline.setAttribute('x1', positionX);
+        vline.setAttribute('y1', printData[2]);
+        vline.setAttribute('x2', positionX);
+        vline.setAttribute('y2', printData[3]);
+        vline.setAttribute('stroke', 'gray');
+        vline.setAttribute('stroke-width', '0.5');
+        vline.setAttribute('stroke-dasharray', '5,5');
+        vline.addEventListener('mouseover', function(){
+            let eventText = document.createElementNS(xmls, 'text');
+            eventText.textContent = aryEvent[i].text;
+            eventText.setAttribute('x', positionX - 20);
+            eventText.setAttribute('y', printData[2] - 10);
+            eventText.setAttribute('font-size', '10');
+            eventText.setAttribute('color', 'black');
+            eventText.setAttribute('id', 'event_' + i);
+            svgLine.appendChild(eventText);
+        });
+        vline.addEventListener('mouseout', function(){
+            if(document.getElementById('event_' + i) != null){
+                document.getElementById('event_' + i).remove();
+            }
+        });
+        svgLine.appendChild(vline);
+
+    }
 }
